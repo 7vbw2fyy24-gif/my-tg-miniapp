@@ -20,7 +20,7 @@
     <h3>Результат:</h3>
     <pre id="result-output">Нажмите на кнопку...</pre>
 
-    <script>
+<script>
         // 🔥 ВАЖНО: Вставьте сюда ваш АКТУАЛЬНЫЙ URL от ngrok
         const API_BASE_URL = "https://unvigilantly-unmicrobial-bianca.ngrok-free.dev";
 
@@ -32,15 +32,20 @@
         async function performTest() {
             resultOutput.textContent = 'Отправка запроса...';
             
+            // Проверяем, что tg.initData доступен. Если нет - выводим ошибку.
+            if (!tg.initData) {
+                resultOutput.textContent = 'Критическая ошибка: tg.initData пустой.\n\nПопробуйте перезапустить приложение. Возможно, вы открываете его не из Telegram.';
+                return;
+            }
+
             try {
-                // Используем надежный способ создания URL
                 const url = new URL('/api/get_my_requests', API_BASE_URL).href;
                 resultOutput.textContent += `\nURL: ${url}`;
                 
                 const response = await fetch(url, {
-                    method: 'GET', // Явно указываем метод
+                    method: 'GET',
                     headers: {
-                        'Authorization': `tma ${tg.initData}`
+                        'Authorization': `tma ${tg.initData}`,
                         'ngrok-skip-browser-warning': 'true'
                     }
                 });
@@ -54,12 +59,16 @@
                 resultOutput.textContent = '!!! КРИТИЧЕСКАЯ ОШИБКА FETCH !!!\n\n' + error.toString();
             }
         }
+    
+        tg.ready();
 
         testButton.onclick = performTest;
         
-        tg.ready();
+        resultOutput.textContent = 'Скрипт загружен. Нажмите на кнопку...';
+
     </script>
 </body>
 </html>
+
 
 
