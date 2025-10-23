@@ -3,169 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мои Заявки</title>
+    <title>Отладка API</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root {
-            --bg-color: var(--tg-theme-bg-color, #ffffff);
-            --text-color: var(--tg-theme-text-color, #000000);
-            --hint-color: var(--tg-theme-hint-color, #999999);
-            --secondary-bg-color: var(--tg-theme-secondary-bg-color, #f4f4f4);
-            --accent-color: var(--tg-theme-button-color, #31B545);
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 15px;
-        }
-        .main-container {
-            display: none; /* Скрываем по умолчанию, пока данные не загрузятся */
-        }
-        .loader {
-            text-align: center;
-            padding-top: 50px;
-            color: var(--hint-color);
-        }
-        .request-card {
-            background-color: var(--secondary-bg-color);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 10px;
-        }
-        .request-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: bold;
-            margin-bottom: 8px;
-        }
-        .request-card-body {
-            font-size: 14px;
-            color: var(--hint-color);
-        }
-        .status {
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 12px;
-            font-weight: bold;
-            color: white;
-        }
-        .status-pending { background-color: #f39c12; }
-        .status-processing { background-color: #3498db; }
-        .status-completed { background-color: #2ecc71; }
-        .status-rejected { background-color: #e74c3c; }
-        .status-cancelled { background-color: #95a5a6; }
-        h2 {
-            margin-top: 0;
-        }
-        .no-requests {
-            text-align: center;
-            color: var(--hint-color);
-            padding: 40px 0;
-        }
+        body { font-family: monospace; padding: 10px; }
+        button { font-size: 16px; padding: 10px; margin-bottom: 15px; }
+        pre { background-color: #f0f0f0; padding: 10px; border: 1px solid #ccc; white-space: pre-wrap; word-wrap: break-word; }
     </style>
 </head>
 <body>
 
-    <div id="loader" class="loader">
-        <p>Загрузка данных...</p>
-    </div>
+    <h1>Страница Отладки</h1>
+    <p>Нажмите на кнопку, чтобы отправить запрос к API.</p>
+    <button id="test-button">Выполнить Тест</button>
 
-    <div id="main-container" class="main-container">
-        <h2>Мои заявки</h2>
-        <div id="requests-list"></div>
-    </div>
+    <h3>Результат:</h3>
+    <pre id="result-output">Нажмите на кнопку...</pre>
 
     <script>
-        // 🔥 ВАЖНО: Убедитесь, что здесь указан ваш АКТУАЛЬНЫЙ URL от ngrok.
-        // Он НЕ должен заканчиваться на слэш.
-        const API_BASE_URL = "https://unvigilantly-unmicrobial-bianca.ngrok-free.dev";
+        // 🔥 ВАЖНО: Вставьте сюда ваш АКТУАЛЬНЫЙ URL от ngrok
+        const API_BASE_URL = "https://your-ngrok-url.ngrok-free.app";
 
         const tg = window.Telegram.WebApp;
         
-        // --- Элементы UI ---
-        const loader = document.getElementById('loader');
-        const mainContainer = document.getElementById('main-container');
-        const requestsList = document.getElementById('requests-list');
+        const testButton = document.getElementById('test-button');
+        const resultOutput = document.getElementById('result-output');
 
-        // --- Функция для получения и отображения данных ---
-        async function fetchAndDisplayData() {
-            // Показываем лоадер, скрываем контент
-            loader.style.display = 'block';
-            mainContainer.style.display = 'none';
-
+        async function performTest() {
+            resultOutput.textContent = 'Отправка запроса...';
+            
             try {
-                // --- ИСПРАВЛЕННЫЙ БЛОК ---
-                // Делаем запрос к нашему API
-                const response = await fetch(`${API_BASE_URL}/api/get_my_requests`, { ... });
-                // Формируем URL безопасно, чтобы избежать двойных или отсутствующих слэшей.
-                // --- КОНЕЦ ИСПРАВЛЕННОГО БЛОКА ---
+                // Используем надежный способ создания URL
+                const url = new URL('/api/get_my_requests', API_BASE_URL).href;
+                resultOutput.textContent += `\nURL: ${url}`;
+                
+                const response = await fetch(url, {
+                    method: 'GET', // Явно указываем метод
+                    headers: {
+                        'Authorization': `tma ${tg.initData}`
+                    }
+                });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                displayRequests(data.requests);
+                resultOutput.textContent += `\n\nСтатус ответа: ${response.status} ${response.statusText}`;
+                
+                const responseText = await response.text();
+                resultOutput.textContent += `\n\nТело ответа:\n${responseText}`;
 
             } catch (error) {
-                console.error("Failed to fetch data:", error);
-                requestsList.innerHTML = `<div class="no-requests"><p style="color: red;">Ошибка загрузки данных.</p><p style="font-size: 12px; color: var(--hint-color)">Проверьте консоль для деталей.</p></div>`;
-            } finally {
-                // Скрываем лоадер, показываем контент
-                loader.style.display = 'none';
-                mainContainer.style.display = 'block';
+                resultOutput.textContent = '!!! КРИТИЧЕСКАЯ ОШИБКА FETCH !!!\n\n' + error.toString();
             }
         }
+
+        testButton.onclick = performTest;
         
-        // --- Функция для отрисовки заявок на странице ---
-        function displayRequests(requests) {
-            if (!requests || requests.length === 0) {
-                requestsList.innerHTML = `<div class="no-requests"><p>У вас еще нет заявок.</p></div>`;
-                return;
-            }
-
-            // Словарь для красивого отображения статусов
-            const statusMap = {
-                'pending': { text: 'В очереди', class: 'status-pending' },
-                'processing': { text: 'В работе', class: 'status-processing' },
-                'completed': { text: 'Завершена', class: 'status-completed' },
-                'rejected': { text: 'Отклонена', class: 'status-rejected' },
-                'cancelled': { text: 'Отменена', class: 'status-cancelled' }
-            };
-
-            requestsList.innerHTML = ''; // Очищаем список
-            requests.forEach(req => {
-                const statusInfo = statusMap[req.status] || { text: req.status, class: '' };
-                const card = `
-                    <div class="request-card">
-                        <div class="request-card-header">
-                            <span>Заявка #${req.id}</span>
-                            <span class="status ${statusInfo.class}">${statusInfo.text}</span>
-                        </div>
-                        <div class="request-card-body">
-                            <p>Номер: ${req.number}</p>
-                            <p>Дата: ${req.created_at}</p>
-                        </div>
-                    </div>
-                `;
-                requestsList.innerHTML += card;
-            });
-        }
-
-
-        // --- Точка входа ---
-        document.addEventListener('DOMContentLoaded', () => {
-            tg.ready(); // Сообщаем Telegram, что приложение готово
-            tg.expand(); // Расширяем на весь экран
-
-            // Запускаем загрузку данных
-            fetchAndDisplayData();
-        });
+        tg.ready();
     </script>
-
 </body>
 </html>
-
