@@ -79,8 +79,9 @@
     </div>
 
     <script>
-        // 🔥 ВАЖНО: Замените этот URL на ваш URL от ngrok (получим на следующем шаге)
-        const API_BASE_URL = "https://unvigilantly-unmicrobial-bianca.ngrok-free.dev/";
+        // 🔥 ВАЖНО: Убедитесь, что здесь указан ваш АКТУАЛЬНЫЙ URL от ngrok.
+        // Он НЕ должен заканчиваться на слэш.
+        const API_BASE_URL = "https://unvigilantly-unmicrobial-bianca.ngrok-free.dev";
 
         const tg = window.Telegram.WebApp;
         
@@ -96,13 +97,18 @@
             mainContainer.style.display = 'none';
 
             try {
-                // Делаем запрос к нашему API
-                const response = await fetch(`${API_BASE_URL}/api/get_my_requests`, {
+                // --- ИСПРАВЛЕННЫЙ БЛОК ---
+                // Формируем URL безопасно, чтобы избежать двойных или отсутствующих слэшей.
+                const url = new URL('/api/get_my_requests', API_BASE_URL).href;
+                
+                // Делаем запрос к нашему API по правильно сформированному URL
+                const response = await fetch(url, {
                     headers: {
                         // Отправляем данные для авторизации
                         'Authorization': `tma ${tg.initData}`
                     }
                 });
+                // --- КОНЕЦ ИСПРАВЛЕННОГО БЛОКА ---
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -113,7 +119,7 @@
 
             } catch (error) {
                 console.error("Failed to fetch data:", error);
-                requestsList.innerHTML = `<p style="color: red;">Ошибка загрузки данных.</p>`;
+                requestsList.innerHTML = `<div class="no-requests"><p style="color: red;">Ошибка загрузки данных.</p><p style="font-size: 12px; color: var(--hint-color)">Проверьте консоль для деталей.</p></div>`;
             } finally {
                 // Скрываем лоадер, показываем контент
                 loader.style.display = 'none';
